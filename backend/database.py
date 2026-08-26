@@ -3,7 +3,7 @@ import asyncpg
 from contextlib import asynccontextmanager
 from fastapi import FastAPI,Request
 from config import settings
-import redis.asyncio as redis 
+from redis_client import create_redis_pool, close_redis 
 # from dotenv import load_dotenv
 
 # load_dotenv()
@@ -19,16 +19,19 @@ async def lifespan(app:FastAPI):
         max_size=20
     )
 
-    app.state.redis= redis.from_url(settings.redis_url,decode_responses=True)
+    app.state.redis= await create_redis_pool()
 
     print("Database connection pool initialized")
 
     yield
     await app.state.pool.close()
-    await app.state.redis.aclose()
     print("Database has been closed.")
+    await close_redis(app.state.redis)
 
 async def get_db(request:Request):
     async with request.app.state.pool.acquire() as conn:
         yield conn
+
+async def get_redis(request: Request):
+    return request.app.state.redis
 
