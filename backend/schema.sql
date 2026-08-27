@@ -6,7 +6,7 @@ CREATE TABLE users(
     user_id SERIAL PRIMARY KEY,
     phone_number phone_check NOT NULL UNIQUE,
     user_role role_check NOT NULL ,
-    full_name          VARCHAR(100),
+    full_name          VARCHAR(100) NOT NULL,
     is_phone_verified  BOOLEAN NOT NULL DEFAULT FALSE,
     is_active          BOOLEAN NOT NULL DEFAULT TRUE,
     last_login_at      TIMESTAMPTZ,
