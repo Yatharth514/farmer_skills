@@ -9,3 +9,9 @@ async def create_user(conn,phone_number:str,role:str,name:str):
         VALUES($1,$2,$3,TRUE)
         RETURNING * """,phone_number,role,name,
     )
+
+async def get_user_by_id(conn,user_id:str):
+    user_id=int(user_id)
+    return await conn.fetchrow(
+        "SELECT * FROM users WHERE user_id = $1 ",user_id
+    )

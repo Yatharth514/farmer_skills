@@ -2,6 +2,8 @@ from fastapi import APIRouter,Depends,HTTPException
 from services.otp_service import generate_and_store_otp,verification_of_otp
 from database import get_redis,get_db
 from queries.users import get_user_by_phone,create_user
+from utils.jwt_handler import create_token
+from dependencies import get_current_user,required_role
 
 router=APIRouter(prefix="/auth",tags=["Auth"])
 
@@ -26,21 +28,38 @@ async def verify_the_otp(phone_number:str,submitted_otp:str,name:str,redis_clien
     user=await get_user_by_phone(conn,phone_number)
 
     if user:
+        token=create_token({"sub":str(user["user_id"]),"role":user["user_role"]})
         return {
             "message": "OTP verified",
-            "user_exists": True
+            "user_exists": True,
+            "token":token
         }
 
     user = await create_user(conn,phone_number,role,name)
+    new_token=create_token({"sub":str(user["user_id"]),"role":user["user_role"]})
 
     return {
         "message": "User created successfully",
         "user_exists": False,
         "user_id": user["user_id"],
-        "role": user["user_role"]
+        "role": user["user_role"],
+        "token":new_token
     }
 
-    
+# @router.get("/me-test")
+# async def me_test(current_user=Depends(get_current_user)):
+#     return {
+#         "user_id": current_user["user_id"],
+#         "role": current_user["user_role"],
+#         "name": current_user["full_name"],
+#         "is_active": current_user["is_active"]
+#     }
+
+# @router.get("/farmer/ping")
+# async def farmer_ping(
+#     current_user=Depends(required_role(["FARMER"]))
+# ):
+#     return {"message": "ok"}
 
 
       
