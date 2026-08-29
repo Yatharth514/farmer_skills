@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Maharashtra Mandi Prices</title>
+  <style>
+    body { max-width: 1300px; margin: 24px auto; padding: 0 16px; font-family: Arial, sans-serif; color: #222; }
+    h1 { margin: 0 0 5px; font-size: 24px; }
+    h2 { margin: 24px 0 10px; font-size: 18px; }
+    #status { min-height: 20px; margin-bottom: 14px; color: #666; font-size: 14px; }
+    .error { color: #b42318 !important; }
+    .controls { margin-bottom: 12px; }
+    select, button { padding: 8px; margin: 0 8px 8px 0; font-size: 14px; }
+    button { cursor: pointer; }
+    .note { color: #666; font-size: 13px; margin-bottom: 14px; }
+    .best { border-top: 1px solid #ddd; border-bottom: 1px solid #ddd; padding: 10px 0; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 8px 10px; border: 1px solid #ddd; text-align: left; font-size: 14px; white-space: nowrap; }
+    th { background: #f2f2f2; }
+    tr:nth-child(even) { background: #fafafa; }
+  </style>
+</head>
+<body>
+  <h1>Maharashtra Mandi Prices</h1>
+  <div id="status">Loading data…</div>
+
+  <div class="controls">
+    <label>
+      District:
+      <select id="district"></select>
+    </label>
+
+    <label>
+      Crop:
+      <select id="crop">
+        <option value="">All crops</option>
+      </select>
+    </label>
+
+    <label>
+      Distance:
+      <select id="radius">
+        <option value="25">25 km</option>
+        <option value="50">50 km</option>
+        <option value="100" selected>100 km</option>
+        <option value="150">150 km</option>
+        <option value="200">200 km</option>
+        <option value="300">300 km</option>
+        <option value="500">500 km</option>
+        <option value="1000">All Maharashtra</option>
+      </select>
+    </label>
+
+    <button id="search">Search</button>
+  </div>
+
+  <div class="note">
+    Distances are approximate district distances, not road distances or exact APMC distances.
+  </div>
+
+  <div class="best">
+    <strong>Best current price:</strong>
+    <span id="best">Select a crop to see the best price.</span>
+  </div>
+
+  <h2>Markets in selected range</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Market</th>
+          <th>District</th>
+          <th>Approx. Distance</th>
+          <th>Crop</th>
+          <th>Min Price</th>
+          <th>Max Price</th>
+          <th>Modal Price</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+<script>
+const districtSelect = document.getElementById('district');
+const cropSelect = document.getElementById('crop');
+const radiusSelect = document.getElementById('radius');
+const searchButton = document.getElementById('search');
+const status = document.getElementById('status');
+const best = document.getElementById('best');
+const tbody = document.getElementById('tbody');
+
+function cell(value) {
+  const td = document.createElement('td');
+  td.textContent = value ?? '';
+  return td;
+}
+
+function price(value) {
+  if (value === null || value === undefined || value === '') return '';
+  return `₹${Number(value).toLocaleString('en-IN')}`;
+}
+
+async function loadFilters() {
+  const [districtResponse, cropResponse] = await Promise.all([
+    fetch('/api/districts'),
+    fetch('/api/crops')
+  ]);
+
+  const districtData = await districtResponse.json();
+  const cropData = await cropResponse.json();
+
+  districtSelect.replaceChildren();
+  districtData.districts.forEach(name => {
+    const option = document.createElement('option');
+    option.value = name;
+    option.textContent = name;
+    districtSelect.appendChild(option);
+  });
+
+  cropData.crops.forEach(name => {
+    const option = document.createElement('option');
+    option.value = name;
+    option.textContent = name;
+    cropSelect.appendChild(option);
+  });
+
+  // Useful default for the demo.
+  const pune = [...districtSelect.options].find(
+    option => option.value.toLowerCase() === 'pune'
+  );
+  if (pune) districtSelect.value = pune.value;
+}
+
+async function searchMarkets() {
+  status.className = '';
+  status.textContent = 'Loading markets…';
+  best.textContent = 'Loading…';
+  tbody.replaceChildren();
+
+  const district = districtSelect.value;
+  const crop = cropSelect.value;
+  const radius = radiusSelect.value;
+
+  try {
+    const nearby = new URL('/api/nearby-markets', window.location.origin);
+    nearby.searchParams.set('district', district);
+    nearby.searchParams.set('radius_km', radius);
+    if (crop) nearby.searchParams.set('crop', crop);
+
+    const response = await fetch(nearby);
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(data.detail || 'Could not load markets.');
+
+    data.markets.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.appendChild(cell(row.market));
+      tr.appendChild(cell(row.district));
+      tr.appendChild(cell(`${row.distance_km} km`));
+      tr.appendChild(cell(row.commodity));
+      tr.appendChild(cell(price(row.min_price)));
+      tr.appendChild(cell(price(row.max_price)));
+      tr.appendChild(cell(price(row.modal_price)));
+      tr.appendChild(cell(row.arrival_date));
+      tbody.appendChild(tr);
+    });
+
+    status.textContent =
+      `${data.count} market(s) found within approximately ${radius} km of ${data.origin_district}.`;
+
+    if (!crop) {
+      best.textContent = 'Select a crop to see the best current modal price.';
+      return;
+    }
+
+    const bestUrl = new URL('/api/best-markets', window.location.origin);
+    bestUrl.searchParams.set('district', district);
+    bestUrl.searchParams.set('radius_km', radius);
+    bestUrl.searchParams.set('crop', crop);
+
+    const bestResponse = await fetch(bestUrl);
+    const bestData = await bestResponse.json();
+
+    if (!bestResponse.ok) throw new Error(bestData.detail || 'Could not load best price.');
+
+    if (!bestData.markets.length) {
+      best.textContent = `No ${crop} price found in this range.`;
+    } else {
+      const winner = bestData.markets[0];
+      best.textContent =
+        `${winner.market}, ${winner.district} — ${price(winner.modal_price)}/q ` +
+        `(${winner.distance_km} km approx.)`;
+    }
+  } catch (error) {
+    status.className = 'error';
+    status.textContent = error.message;
+    best.textContent = 'Could not load best price.';
+  }
+}
+
+searchButton.addEventListener('click', searchMarkets);
+
+async function start() {
+  try {
+    await loadFilters();
+    await searchMarkets();
+  } catch (error) {
+    status.className = 'error';
+    status.textContent = error.message;
+  }
+}
+
+start();
+</script>
+</body>
+</html>
