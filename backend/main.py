@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import lifespan
 from routers.auth import router as auth_router
+from routers.farmer import router as farmer_router
 app=FastAPI(lifespan=lifespan)
 
 app.add_middleware(
@@ -12,6 +13,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(auth_router,prefix="/api")
+app.include_router(farmer_router,prefix="/api")
 
 # @app.get("/db-test")
 # async def db_test(): here we have tested the database connection with fastapi

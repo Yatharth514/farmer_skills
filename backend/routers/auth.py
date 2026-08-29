@@ -4,6 +4,7 @@ from database import get_redis,get_db
 from queries.users import get_user_by_phone,create_user
 from utils.jwt_handler import create_token
 from dependencies import get_current_user,required_role
+from queries.farmer_profile import get_farmer_profile
 
 router=APIRouter(prefix="/auth",tags=["Auth"])
 
@@ -29,11 +30,30 @@ async def verify_the_otp(phone_number:str,submitted_otp:str,name:str,redis_clien
 
     if user:
         token=create_token({"sub":str(user["user_id"]),"role":user["user_role"]})
+        if user["user_role"]!="FARMER":
+            return {
+                        "message": "OTP verified",
+                        "user_exists": True,
+                        "token":token,
+                        "has_profile":False
+                    }
+        row=await get_farmer_profile(conn,user["user_id"])
+        if row is None:
+            return {
+                        "message": "OTP verified",
+                        "user_exists": True,
+                        "token":token,
+                        "has_profile":False
+                    }
         return {
-            "message": "OTP verified",
-            "user_exists": True,
-            "token":token
-        }
+                        "message": "OTP verified",
+                        "user_exists": True,
+                        "token":token,
+                        "has_profile":True
+                }
+
+        
+        
 
     user = await create_user(conn,phone_number,role,name)
     new_token=create_token({"sub":str(user["user_id"]),"role":user["user_role"]})
@@ -43,7 +63,8 @@ async def verify_the_otp(phone_number:str,submitted_otp:str,name:str,redis_clien
         "user_exists": False,
         "user_id": user["user_id"],
         "role": user["user_role"],
-        "token":new_token
+        "token":new_token,
+        "has_profile":False
     }
 
 # @router.get("/me-test")
