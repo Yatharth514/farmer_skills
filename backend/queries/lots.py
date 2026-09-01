@@ -11,7 +11,15 @@ async def get_lot_by_id(conn,lot_id:int):
         "SELECT * FROM lots where lot_id=$1",lot_id
     )
 
-async def get_lots_by_farmer(conn,farmer_id:int):
+async def get_lots_by_farmer(conn,farmer_id:int,limit:int,offset:int):
     return await conn.fetch(
-        "SELECT * FROM lots where farmer_id=$1",farmer_id
+        """SELECT * FROM lots where farmer_id=$1
+        ORDER BY created_at DESC
+        LIMIT $2
+        OFFSET $3""",farmer_id,limit,offset
+    )
+
+async def get_crop_by_id(conn,crop_id:int):
+    return await conn.fetchrow(
+        "SELECT * FROM crop where crop_id=$1",crop_id
     )
