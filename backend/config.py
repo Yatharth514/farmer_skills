@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     jwt_expiry_time:int=60*24*7
     otp_expiry_seconds:int=120
     otp_max_attempts:int=4
+    DATA_GOV_API_KEY: str
 
     class Config:
         env_file=".env"
