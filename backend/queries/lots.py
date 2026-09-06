@@ -23,3 +23,11 @@ async def get_crop_by_id(conn,crop_id:int):
     return await conn.fetchrow(
         "SELECT * FROM crop where crop_id=$1",crop_id
     )
+
+async def mark_sold(conn,lot_id:int):
+    return await conn.execute(
+        """UPDATE lots
+        SET lot_status = $1
+        WHERE lot_id = $2
+        AND lot_status = $3 ""","SOLD",lot_id,"LISTED"
+    )

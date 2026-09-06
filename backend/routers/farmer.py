@@ -10,6 +10,8 @@ from schemas.prediction import PredictionOut
 from services.get_prediction import get_the_prediction
 from schemas.calc import CalcResultOut
 from services.calculate import comparison
+from schemas.offer import OfferOut
+from services.offer_service import all_offer_of_lot,all_offers_of_farmer,accept_offer
 
 router = APIRouter( prefix="/farmer",tags=["Farmer Profile"])
 
@@ -38,3 +40,27 @@ async def predict_for_crop(crop_id:int,mandi_id:int,current_user=Depends(require
 async def get_calc(crop_id:int,quantity:float,cost:float,max_distance:int=Query(...,gt=0,le=1000),current_user=Depends(required_role(["FARMER"])),conn=Depends(get_db)):
     row=await comparison(conn,current_user["user_id"],crop_id,quantity,max_distance,cost)
     return row
+
+@router.get("/offers",response_model=list[OfferOut])
+async def get_offer(page:int=Query(1,ge=1),limit:int=Query(10,ge=1,le=100),conn=Depends(get_db),current_user=Depends(required_role(["FARMER"]))):
+    row= await all_offers_of_farmer(conn,current_user["user_id"],page,limit)
+    return row
+
+@router.get("/lots/{lot_id}/offers",response_model=list[OfferOut])
+async def get_lot_offer(lot_id:int,page:int=Query(1,ge=1),limit:int=Query(10,ge=1,le=100),conn=Depends(get_db),current_user=Depends(required_role(["FARMER"]))):
+    row=await all_offer_of_lot(conn,lot_id,current_user["user_id"],page,limit)
+    return row
+
+@router.post("/offers/{offer_id}/accept")
+async def accept_farmer_offer(
+    offer_id: int,
+    conn=Depends(get_db),
+    current_user=Depends(required_role(["FARMER"]))
+):
+    result = await accept_offer(
+        conn,
+        current_user["user_id"],
+        offer_id
+    )
+
+    return result
