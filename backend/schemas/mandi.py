@@ -8,9 +8,6 @@ class MandiCreate(BaseModel):
     longitude: float = Field(..., ge=72.6, le=80.9)
 
 class MandiOut(BaseModel):
-    mandi_id: int
     mandi_name: str
     district: str
-    state: str
-    latitude: float
-    longitude: float
+    distance_km:float

@@ -22,3 +22,4 @@ async def insert_mandi_price(conn,crop_id:int,mandi_id:int,price_date:date,min_p
         arrival_volume=EXCLUDED.arrival_volume
         RETURNING * """,mandi_id,crop_id,price_date,min_price,max_price,modal_price,arrival_volume
     )
+
