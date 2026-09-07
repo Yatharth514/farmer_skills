@@ -99,10 +99,18 @@ async def reject_the_other_offers(conn,offer_id:int,lot_id:int):
         AND status = $4""","REJECTED",lot_id,offer_id,"PENDING"
     )
 
-async def accept_the_offer(conn,offer_id):
+async def accept_the_offer(conn,offer_id:int):
     return await conn.execute(
         """UPDATE offers
         SET status = $1
         WHERE offer_id = $2
         AND status = $3""","ACCEPTED",offer_id,"PENDING"
+    )
+
+async def reject_the_offer(conn,offer_id:int):
+    return await conn.execute(
+        """UPDATE offers
+        SET status = $1
+        WHERE offer_id = $2
+        AND status = $3""","REJECTED",offer_id,"PENDING"
     )

@@ -1,4 +1,4 @@
-from queries.offer import get_offer_for_the_lot,get_all_offers,get_lot_from_offer_id,accept_the_offer,reject_the_other_offers
+from queries.offer import get_offer_for_the_lot,get_all_offers,get_lot_from_offer_id,accept_the_offer,reject_the_other_offers,reject_the_offer
 from fastapi import HTTPException
 from queries.lots import mark_sold
 
@@ -44,4 +44,19 @@ async def accept_offer(conn,farmer_id:int,offer_id:int):
         "offer_id": offer_id,
         "lot_id": offer["lot_id"]
     }
+
+async def reject_an_offer(conn,farmer_id:int,offer_id:int):
+    offer=await get_lot_from_offer_id(conn,offer_id)
+    if offer is None:
+        raise HTTPException(status_code=404,detail="Not Found")
+    if offer["farmer_id"]!=farmer_id:
+        raise HTTPException(status_code=403,detail="Not Authorized")
+    if offer["offer_status"]!="PENDING":
+        raise HTTPException(status_code=409,detail="offer does not exist anymore")
+    await reject_the_offer(conn,offer_id)
+    return {
+            "message": "Offer rejected successfully",
+            "offer_id": offer_id,
+            "lot_id": offer["lot_id"]
+        }
 
