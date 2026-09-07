@@ -82,6 +82,8 @@ async def get_lot_from_offer_id(conn,offer_id:int):
 		l.lot_id AS lot_id,
         l.lot_status,
         o.offer_id,
+        o.offer_price,
+        o.quantity_accepted,
 		o.status AS offer_status,
         o.buyer_id
         FROM offers o 
@@ -113,4 +115,18 @@ async def reject_the_offer(conn,offer_id:int):
         SET status = $1
         WHERE offer_id = $2
         AND status = $3""","REJECTED",offer_id,"PENDING"
+    )
+
+async def fill_the_transaction_detail(conn,lot_id:int,farmer_id:int,offer_id:int,buyer_id:int,final_price:float,final_quantity:float):
+    return await conn.fetchrow(
+        """INSERT INTO transactions(
+        lot_id,
+        offer_id,
+        farmer_id,
+        buyer_id,
+        final_price,
+        final_quantity,
+        transaction_status)
+        VALUES($1,$2,$3,$4,$5,$6,$7)
+        RETURNING *""",lot_id,offer_id,farmer_id,buyer_id,final_price,final_quantity,"CONFIRMED"
     )
