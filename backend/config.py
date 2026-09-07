@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     otp_expiry_seconds:int=120
     otp_max_attempts:int=4
     DATA_GOV_API_KEY: str
+    transport_rate_per_km: float = 15
 
     class Config:
         env_file=".env"

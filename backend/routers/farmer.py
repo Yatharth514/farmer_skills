@@ -12,7 +12,7 @@ from schemas.calc import CalcResultOut
 from services.calculate import comparison
 from schemas.offer import OfferOut
 from services.offer_service import all_offer_of_lot,all_offers_of_farmer,accept_offer,reject_an_offer
-
+from services.logistic import request_the_log
 router = APIRouter( prefix="/farmer",tags=["Farmer Profile"])
 
 @router.post("/profile")
@@ -68,4 +68,9 @@ async def accept_farmer_offer(
 @router.post("/offers/{offer_id}/reject")
 async def reject_offer(offer_id:int,conn=Depends(get_db),current_user=Depends(required_role(["FARMER"]))):
     result=await reject_an_offer(conn,current_user["user_id"],offer_id)
+    return result
+
+@router.post("/request/{lot_id}")
+async def request_for_log(lot_id:int,conn=Depends(get_db),current_user=Depends(required_role(["FARMER"]))):
+    result=await request_the_log(conn,lot_id,current_user["user_id"])
     return result
