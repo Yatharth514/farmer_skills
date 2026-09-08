@@ -18,3 +18,8 @@ async def get_transaction_detail(conn,lot_id:int):
         WHERE t.lot_id = $1
         AND t.transaction_status = $2""",lot_id,"CONFIRMED"
     )
+
+async def get_transaction_by_id(conn,transaction_id:int):
+    return await conn.fetchrow(
+        "SELECT * FROM transactions WHERE transaction_id = $1",transaction_id
+    )

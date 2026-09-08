@@ -18,4 +18,4 @@ async def get_a_payment(conn,farmer_id:int,payment_id:int):
     if result is None :
         raise HTTPException(status_code=404,detail="Not found")
     return dict(result) 
-    
+
