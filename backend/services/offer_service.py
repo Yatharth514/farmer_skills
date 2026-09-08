@@ -1,6 +1,8 @@
 from queries.offer import get_offer_for_the_lot,get_all_offers,get_lot_from_offer_id,accept_the_offer,reject_the_other_offers,reject_the_offer,fill_the_transaction_detail
 from fastapi import HTTPException
 from queries.lots import mark_sold
+from schemas.offer import AcceptOfferIn 
+from queries.payment import payment_record
 
 async def all_offers_of_farmer(conn,farmer_id:int,page:int,limit:int):
     offset=(page-1)*limit
@@ -23,7 +25,7 @@ async def all_offer_of_lot(conn,lot_id:int,farmer_id:int,page:int,limit:int):
     return all_offer
 
 
-async def accept_offer(conn,farmer_id:int,offer_id:int):
+async def accept_offer(conn,farmer_id:int,offer_id:int,payment_date:AcceptOfferIn):
     offer=await get_lot_from_offer_id(conn,offer_id)
     if offer is None:
         raise HTTPException(status_code=404,detail="Not Found")
@@ -48,11 +50,18 @@ async def accept_offer(conn,farmer_id:int,offer_id:int):
             offer["offer_price"],
             offer["quantity_accepted"]
             )
+        if payment_date.expected_payment_date<transaction["created_at"].date():
+            raise HTTPException(status_code=400,detail="Date is not appropriate")
+        payable_amount=transaction["final_price"]*transaction["final_quantity"]
+        payment=await payment_record(conn,transaction["transaction_id"],payable_amount,payment_date.expected_payment_date)
+        
+        
     return {
         "message": "Offer accepted successfully",
         "offer_id": offer_id,
         "lot_id": offer["lot_id"],
-        "transaction":dict(transaction)
+        "transaction":dict(transaction),
+        "payment":dict(payment)
     }
 
 async def reject_an_offer(conn,farmer_id:int,offer_id:int):

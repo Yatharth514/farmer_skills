@@ -30,3 +30,5 @@ class OfferOut(BaseModel):
     is_verified: bool
     
 
+class AcceptOfferIn(BaseModel):
+    expected_payment_date:date

@@ -13,6 +13,9 @@ from services.calculate import comparison
 from schemas.offer import OfferOut
 from services.offer_service import all_offer_of_lot,all_offers_of_farmer,accept_offer,reject_an_offer
 from services.logistic import request_the_log
+from schemas.offer import AcceptOfferIn
+from schemas.payment import PaymentOut
+from services.payment import get_a_payment,get_all_payments
 router = APIRouter( prefix="/farmer",tags=["Farmer Profile"])
 
 @router.post("/profile")
@@ -54,13 +57,15 @@ async def get_lot_offer(lot_id:int,page:int=Query(1,ge=1),limit:int=Query(10,ge=
 @router.post("/offers/{offer_id}/accept")
 async def accept_farmer_offer(
     offer_id: int,
+    payment_date:AcceptOfferIn,
     conn=Depends(get_db),
     current_user=Depends(required_role(["FARMER"]))
 ):
     result = await accept_offer(
         conn,
         current_user["user_id"],
-        offer_id
+        offer_id,
+        payment_date
     )
 
     return result
@@ -74,3 +79,14 @@ async def reject_offer(offer_id:int,conn=Depends(get_db),current_user=Depends(re
 async def request_for_log(lot_id:int,conn=Depends(get_db),current_user=Depends(required_role(["FARMER"]))):
     result=await request_the_log(conn,lot_id,current_user["user_id"])
     return result
+
+@router.get("/payments",response_model=list[PaymentOut])
+async def all_payments(page:int=Query(1,ge=1),limit:int=Query(10,ge=1,le=100),conn=Depends(get_db),current_user=Depends(required_role(["FARMER"]))):
+    result=await get_all_payments(conn,current_user["user_id"],limit,page)
+    return result
+
+@router.get("/payments/{payment_id}",response_model=PaymentOut)
+async def a_payment(payment_id:int,conn=Depends(get_db),current_user=Depends(required_role(["FARMER"]))):
+    result =await get_a_payment(conn,current_user["user_id"],payment_id)
+    return result
+
