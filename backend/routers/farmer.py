@@ -16,6 +16,8 @@ from services.logistic import request_the_log
 from schemas.offer import AcceptOfferIn
 from schemas.payment import PaymentOut
 from services.payment import get_a_payment,get_all_payments
+from schemas.alerts import AlertOut
+from services.alert_service import get_all_alerts,mark_user_alert_as_read
 router = APIRouter( prefix="/farmer",tags=["Farmer Profile"])
 
 @router.post("/profile")
@@ -90,3 +92,25 @@ async def a_payment(payment_id:int,conn=Depends(get_db),current_user=Depends(req
     result =await get_a_payment(conn,current_user["user_id"],payment_id)
     return result
 
+@router.get("/alerts",response_model=list[AlertOut])
+async def alert(page:int=Query(1,ge=1),limit:int=Query(10,ge=1,le=100),conn=Depends(get_db),current_user=Depends(required_role(["FARMER"]))):
+    result=await get_all_alerts(conn,current_user["user_id"],limit,page)
+    return result
+
+# @router.post("/test-alert")
+# async def test_alert(
+#     conn=Depends(get_db)
+# ):
+#     await send_alert(
+#         conn,
+#         1,
+#         "NEW_OFFER",
+#         "This is a test alert"
+#     )
+
+#     return {"message": "Alert sent"}
+
+@router.patch("/alerts/{alert_id}/read")
+async def mark_read(alert_id:int,conn=Depends(get_db),current_user=Depends(required_role(["FARMER"]))):
+    result=await mark_user_alert_as_read(conn,current_user["user_id"],alert_id)
+    return result
