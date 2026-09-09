@@ -16,8 +16,8 @@ from services.logistic import request_the_log
 from schemas.offer import AcceptOfferIn
 from schemas.payment import PaymentOut
 from services.payment import get_a_payment,get_all_payments
-from schemas.alerts import AlertOut
-from services.alert_service import get_all_alerts,mark_user_alert_as_read
+from shared.schemas.alerts import AlertOut
+from shared.services.alert_service import get_all_alerts,mark_user_alert_as_read
 router = APIRouter( prefix="/farmer",tags=["Farmer Profile"])
 
 @router.post("/profile")

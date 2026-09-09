@@ -2,7 +2,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
 
 from websocket_manager import manager
 from utils.jwt_handler import verify_token
-from queries.users import get_user_by_id
+from farmer.queries.users import get_user_by_id
 
 
 router = APIRouter()

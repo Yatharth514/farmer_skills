@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import lifespan
-from routers.auth import router as auth_router
-from routers.farmer import router as farmer_router
-from routers.lot import router as lot_router
-from routers.disputes import router as dispute_router
-from routers.websocket import router as websocket_router
+from farmer.routers.auth import router as auth_router
+from farmer.routers.farmer import router as farmer_router
+from farmer.routers.lot import router as lot_router
+from farmer.routers.disputes import router as dispute_router
+from shared.routers.websocket import router as websocket_router
 app=FastAPI(lifespan=lifespan)
 
 app.add_middleware(
